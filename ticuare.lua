@@ -1,10 +1,9 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80
+-- desc:	UI library for TIC-80 v0.2
 -- script:	lua
 -- input:	mouse
 
--- ticuare.lua v0.1
 -- Based on Uare (c) 2015 Ulysse Ramage
 -- Copyright (c) 2017 Crutiatix
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -188,7 +187,7 @@ function ticuare:drawSelf()
 			local offset = self.icon.offset or {x=0,y=0}
 
 			self.icon.key = self.icon.key or -1
-			self.icon.scale = self.icon.scale or 0
+			self.icon.scale = self.icon.scale or 1
 			self.icon.flip = self.icon.flip or 0
 			self.icon.rotate = self.icon.rotate or 0
 			self.icon.size = self.icon.size or 1
