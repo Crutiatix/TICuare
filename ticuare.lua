@@ -217,9 +217,17 @@ function ticuare:drawSelf()
 
 			local offset = self.text.offset or {x = 0, y = 0}
 			if self.text.font then
-				font(self.text.display, self.x-(self.center and self.w*.5 or 0)+offset.x, self.y+(self.center and 0 or self.h*.5)+offset.y, self.text.transparent, self.text.space)
+				local fsize = font(self.text.display,-100,-100, self.text.transparent, self.text.space)
+				font(self.text.display,
+					self.x+(self.text.center and (self.w*.5)-(fsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
+					self.y+(self.text.center and (self.h*.5)-4 or 0)+offset.y+(self.text.center and 0 or self.border.width),
+					self.text.transparent, self.text.space)
 			else
-				print(self.text.display, self.x-(self.center and self.w*.5 or 0)+offset.x, self.y+(self.center and 0 or self.h*.5)+offset.y, self.text.colors[1], self.text.fixed)
+				local psize = print(self.text.display,-100,-100, 0, self.text.fixed)
+					print(self.text.display,
+						self.x+(self.text.center and (self.w*.5)-(psize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
+						self.y+(self.text.center and (self.h*.5)-3 or 0)+offset.y+(self.text.center and 0 or self.border.width),
+						fcolor, self.text.fixed)
 			end
 		end
 
