@@ -29,7 +29,7 @@ myElement = ticuare.element({
   y = 10,                   -- position y
   w = 400,                  -- width
   h = 60,                   -- height  
-	center = true,						-- this makes as default positioning point center of element instead of left-top corner
+  center = true,            -- this makes as default positioning point center of element instead of left-top corner
   colors = {1,2,3},         -- define a colors for default, hover and hold state (in this order)
   border = {                -- define border style
     colors = {4,5,6},       -- same as before
@@ -70,19 +70,19 @@ Icon are defined in element by using attribute *icon*. It's attributes are *spri
 
 ```lua
 myElement = ticuare.element({
-	x = 20,	y = 20,	w = 8, h = 8,
-	icon = {
-  	sprites = {1,2,3},	-- sprites for default, hover and held state
-  	offset = {
-    	x = 0,
-    	y = 0
-  	},
-		key = 0, 						-- default -1 so opaque
-		scale = 1,					-- default 1
-		flip = 0,						-- default 0
-		rotate = 0,					-- default 0
-		size = 1						-- default 1
-	}
+  x = 20, y = 20, w = 8, h = 8,
+  icon = {
+    sprites = {1,2,3},  -- sprites for default, hover and held state
+    offset = {
+      x = 0,
+      y = 0
+  },
+    key = 0,            -- default -1 so opaque
+    scale = 1,          -- default 1
+    flip = 0,           -- default 0
+    rotate = 0,         -- default 0
+    size = 1            -- default 1
+  }
 })
 ```
 ![Icon Example](/images/example7.gif)
@@ -91,7 +91,7 @@ myElement = ticuare.element({
 TICuare also uses a group system, which can be used to set attributes of many elements more efficiently.
 
 ```lua
-myGroup = ticuare.newGroup()						-- create group and assign
+myGroup = ticuare.newGroup()            -- create group and assign
 
 myElement1 = ticuare.element({ 
   x = 64, y = 64, w = 20, h = 10,
@@ -100,14 +100,14 @@ myElement1 = ticuare.element({
     colors = {2,2,2},
     width = 2
   },
-  onClick = function()									-- When clicked on this element
-    if myElement1:getVisible() then			-- If Element in group is visible
-      myGroup:hide()										-- Hide everything in group
+  onClick = function()                  -- When clicked on this element
+    if myElement1:getVisible() then     -- If Element in group is visible
+      myGroup:hide()                    -- Hide everything in group
     else
-     myGroup:show()											-- Show everything in group
+     myGroup:show()                     -- Show everything in group
     end
   end
-}):group(myGroup)												-- add element to group
+}):group(myGroup)                       -- add element to group
 
 myElement2 = ticuare.element({
   x = 64, y = 74, w = 20, h = 20,
@@ -153,10 +153,10 @@ ticuare.element({
   drag = {
     enabled = true,
     fixed = {
-      y = true 			--movement is restricted on the vertical axis
+      y = true      --movement is restricted on the vertical axis
     },
-    bounds = { 			--we just set horizontal bounds
-      {x = 20},			-- from position (global)
+    bounds = {      --we just set horizontal bounds
+      {x = 20},     -- from position (global)
       {x = 60}      -- to position (global)
     }
   }
@@ -173,7 +173,7 @@ ticuare.element({
     enabled = true,
     bounds = {
       {x = 20, y = 20},
-      {x = 220,	y = 116}
+      {x = 220, y = 116}
     }
   }
 })
@@ -194,7 +194,7 @@ myElement1 = ticuare.element({
     colors={11,11,11},
     width = 2
   },
-  drag = {								-- no fixed and bounds definition make it free dragable
+  drag = {          -- no fixed and bounds definition make it free dragable
     enabled = true,
   }
 })
@@ -220,7 +220,7 @@ TIC-80 currently doesn't offer trim/wrap function in it's API and it's implement
 
 ```lua
 myElement = ticuare.element({
-  x = 20, y = 20,	w = 50,	h = 50,
+  x = 20, y = 20, w = 50, h = 50,
 		colors={15,15,15},
 		border={
 			colors={10,10,10},
@@ -230,8 +230,8 @@ myElement = ticuare.element({
     enabled = true,
   },
 		content ={
-			w = 50,				-- set size of content
-			h = 50					-- if set with wrap attribute, so conten is drawed only in this box
+			w = 50,         -- set size of content
+			h = 50          -- if set with wrap attribute, so conten is drawed only in this box
 		}
 })
 ```
@@ -294,13 +294,13 @@ elementfront:setIndex(2)
 ### Callbacks - Called on specific events
 
 ```lua
-onClick 				--button is clicked down
-onCleanRelease 	--button is cleanly released (mouse is inside the button)
-onRelease 			--button is released (mouse _can_ be outside the button, for instance if the user tries to drag it)
-onHold 					--button is held (called every frame)
-onStartHover 		--mouse has started hovering the button
-onHover 				--mouse is hovering the button (called every frame)
-onReleaseHover 	--mouse is not hovering anymore
+onClick         --button is clicked down
+onCleanRelease  --button is cleanly released (mouse is inside the button)
+onRelease       --button is released (mouse _can_ be outside the button, for instance if the user tries to drag it)
+onHold          --button is held (called every frame)
+onStartHover    --mouse has started hovering the button
+onHover         --mouse is hovering the button (called every frame)
+onReleaseHover  --mouse is not hovering anymore
 ```
 
 Callbacks can be set just like normal attributes.
