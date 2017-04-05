@@ -11,6 +11,7 @@ Then, you'll need to update the library in order to update the status of your el
 ```lua
 -- input: mouse
 function TIC()
+	cls(0)
   ticuare.update(mouse())
   ticuare.draw()
 end
