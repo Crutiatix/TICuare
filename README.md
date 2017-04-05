@@ -21,7 +21,7 @@ Usage and features
 ----------------
 
 ### Elements
-Everything what you create in Tincuare will be made from **element**:
+Everything what you create in TICuare will be made from **element**:
 ```lua
 myElement = ticuare.element({ 
   x = 10,                   -- position x
