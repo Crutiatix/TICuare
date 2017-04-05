@@ -274,6 +274,12 @@ myElement = ticuare.element({
       h = 50          -- if set with wrap attribute, so conten is drawed only in this box
     }
 })
+
+myElement:setContent(function(ref, x, y) -- ref - reference to myElement; x,y top left corner of element inside borders
+  print("Content", x+1, y+8)
+  print("    of", x+1, y+16)
+  print("Element", x+1, y+24)
+end)
 ```
 ![Example 6](/images/example6.gif)
 
