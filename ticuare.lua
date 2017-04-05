@@ -134,14 +134,16 @@ function ticuare:updateSelf(mx, my, mp, e)
 		self.x = (not self.drag.fixed or not self.drag.fixed[1]) and mx + ticuare.holdt.d.x or self.x
 		self.y = (not self.drag.fixed or not self.drag.fixed[2]) and my + ticuare.holdt.d.y or self.y
 		if self.drag.bounds then
-			if self.drag.bounds[1] then
-				self.x = (self.drag.bounds[1].x and self.x < self.drag.bounds[1].x) and self.drag.bounds[1].x or self.x
-				self.y = (self.drag.bounds[1].y and self.y < self.drag.bounds[1].y) and self.drag.bounds[1].y or self.y
-			end
-			if self.drag.bounds[2] then
-				self.x = (self.drag.bounds[2].x and self.x > self.drag.bounds[2].x) and self.drag.bounds[2].x or self.x
-				self.y = (self.drag.bounds[2].y and self.y > self.drag.bounds[2].y) and self.drag.bounds[2].y or self.y
-			end
+			self.drag.bounds[1].x = self.drag.bounds[1].x or self.x
+			self.drag.bounds[1].y = self.drag.bounds[1].y or self.y
+			self.drag.bounds[2].x = self.drag.bounds[2].x or self.x
+			self.drag.bounds[2].y = self.drag.bounds[2].y or self.y
+
+			self.x = (self.drag.bounds[1].x and self.x < self.drag.bounds[1].x) and self.drag.bounds[1].x or self.x
+			self.y = (self.drag.bounds[1].y and self.y < self.drag.bounds[1].y) and self.drag.bounds[1].y or self.y
+			self.x = (self.drag.bounds[2].x and self.x > self.drag.bounds[2].x) and self.drag.bounds[2].x or self.x
+			self.y = (self.drag.bounds[2].y and self.y > self.drag.bounds[2].y) and self.drag.bounds[2].y or self.y
+
 		end
 		if self.track then
 			self:anchor(self.track.ref)
@@ -185,17 +187,17 @@ function ticuare:drawSelf()
 			local sprite = ((self.hold and self.icon.sprites[3]) and self.icon.sprites[3]) or ((self.hover and self.icon.sprites[2]) and self.icon.sprites[2]) or self.icon.sprites[1]
 			local offset = self.icon.offset or {x=0,y=0}
 
-			self.icon.colorkey = self.icon.colorkey or -1
-			self.icon.scale = self.icon.scale or 1
+			self.icon.key = self.icon.key or -1
+			self.icon.scale = self.icon.scale or 0
 			self.icon.flip = self.icon.flip or 0
 			self.icon.rotate = self.icon.rotate or 0
 			self.icon.size = self.icon.size or 1
 			for x=1,self.icon.size do
 				for y=1,self.icon.size do
 					spr(sprite+(x-1)+((y-1)*16),
-						(tempX+(self.center and 0 or self.w*.5)+offset.x),
-						(tempY+(self.center and 0 or self.h*.5)+offset.y),
-						self.icon.colorkey,
+						(tempX+(self.center and 0 or self.w*.5)+offset.x-4),
+						(tempY+(self.center and 0 or self.h*.5)+offset.y-4),
+						self.icon.key,
 						self.icon.scale,
 						self.icon.flip,
 						self.icon.rotate)
@@ -234,10 +236,9 @@ end
 function ticuare:renderContent()
 	local tx, ty = self.x, self.y
 	if self.center then tx, ty = self.x-self.w*.5, self.y-self.h*.5 end
-	local offsetX = tx-(self.content.scroll.x or 0)*(self.content.w-self.w)
-	local offsetY = ty-(self.content.scroll.y or 0)*(self.content.h-self.h)
-
-
+	local border = self.border.width and self.border.width+1 or 1
+	local offsetX = tx-(self.content.scroll.x or 0)*(self.content.w-self.w) + border
+	local offsetY = ty-(self.content.scroll.y or 0)*(self.content.h-self.h) + border
 	self.drawContent(self,offsetX,offsetY)
 
 
@@ -327,13 +328,24 @@ end
 --Creation / Linking
 
 function ticuare:style(style)
-	mergeTables(self, copyTable(style), false)
-
+	if self.type == "group" then
+		for i = 1, #self.elements do
+			mergeTables(self.elements[i], copyTable(style), false)
+		end
+	else
+		mergeTables(self, copyTable(style), false)
+	end
 	return self
 end
 
 function ticuare:anchor(other)
-	self.track = {ref = other, d = {x = self.x-other.x, y = self.y-other.y}}
+	if self.type == "group" then
+		self.elements[1].track = {ref = other.elements[1], d = {x = self.x-other.elements[1].x, y = self.y-otherelements.other.y}}
+	else
+		self.track = {ref = other, d = {x = self.x-other.x, y = self.y-other.y}}
+	end
+
+
 
 	return self
 end
