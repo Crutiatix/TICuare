@@ -27,8 +27,8 @@ Everything what you create in TICuare will be made from **element**:
 myElement = ticuare.element({ 
   x = 10,                   -- position x
   y = 10,                   -- position y
-  w = 400,                  -- width
-  h = 60,                   -- height  
+  w = 20,                   -- width
+  h = 20,                   -- height  
   center = true,            -- this makes as default positioning point center of element instead of left-top corner
   colors = {1,2,3},         -- define a colors for default, hover and hold state (in this order)
   border = {                -- define border style
