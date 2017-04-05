@@ -11,7 +11,7 @@ Then, you'll need to update the library in order to update the status of your el
 ```lua
 -- input: mouse
 function TIC()
-	cls(0)
+  cls(0)
   ticuare.update(mouse())
   ticuare.draw()
 end
@@ -62,6 +62,46 @@ myElement = ticuare.element({
 
 Styles are created using *ticuare.newStyle(attributes)* and applied using *ticuare.new(attributes):style(myStyle)*.
 They can also be applied *after* creation, using *button:style(myStyle)*.
+
+### Text
+TICuare implements ease way to write text on elements. A text is added to element by using *text* attribute in body of element. Attributes of *text* are *display* (text to dislay), *colors*, *offset* and *font*. 
+If *font* is true then text is displeyed by function font() from TIC-80 API, so it uses user defined font, else default is value false so means it uses function print() from TIC-80 API. If *font* is used it's needed to set two more attributes: *transparent* (transparent color of font) and *space* which define size of space.
+
+```lua
+myElement1 = ticuare.element({
+  x=20,y=20,w=200,h=14,
+  colors={3,3,3},
+  border={
+    colors={7,7,7},
+    width = 2
+  },
+  text = {
+    display = "TICuare - Uare for TIC-80",  -- Text to display
+    colors  = {15,14,9},                    -- colors of text for default, hover and held state
+    center = true,                          -- vertical and horizontal centerize 
+    offset={x=0,y=0}
+    fixed = false                           -- if true all characters have fixed size 
+	}
+})
+
+myElement2 = ticuare.element({
+  x=20,y=40,w=200,h=14,
+  colors={3,3,3},
+  border={
+    colors={7,7,7},
+    width = 2
+  },
+  text = {
+    font = true,                  -- write text by user defined font
+    display = "TICuare - Uare for TIC-80",
+    colors  = {15,14,9},          -- for now it has no effect
+    center = true,
+    transparent = 5,             -- make specific color transparent
+    space = 5                    -- size of space
+  }
+})
+```
+![Text example](/images/example8.gif)
 
 ### Icons
 Icons can represent images defined as sprites.
@@ -221,18 +261,18 @@ TIC-80 currently doesn't offer trim/wrap function in it's API and it's implement
 ```lua
 myElement = ticuare.element({
   x = 20, y = 20, w = 50, h = 50,
-		colors={15,15,15},
-		border={
-			colors={10,10,10},
-			width = 2
-		},
+    colors={15,15,15},
+    border={
+      colors={10,10,10},
+      width = 2
+    },
   drag = {
     enabled = true,
   },
-		content ={
-			w = 50,         -- set size of content
-			h = 50          -- if set with wrap attribute, so conten is drawed only in this box
-		}
+    content ={
+      w = 50,         -- set size of content
+      h = 50          -- if set with wrap attribute, so conten is drawed only in this box
+    }
 })
 ```
 ![Example 6](/images/example6.gif)
@@ -240,14 +280,14 @@ myElement = ticuare.element({
 **Scrolling** is set in the *content* atribute using *scroll* atribute like this:
 ```lua
 -- start of the element definition
-	content = {
-		w = 100,
-		h = 100,
-		scroll = {
-			x = 1 -- for horisontal scroll (optional)
-			y = 1 -- for vertical scroll. Botom of content.
-		}
-	}
+  content = {
+    w = 100,
+    h = 100,
+    scroll = {
+      x = 1 -- for horisontal scroll (optional)
+      y = 1 -- for vertical scroll. Botom of content.
+    }
+  }
 -- rest of the element definition
 ```
 
