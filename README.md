@@ -28,6 +28,7 @@ myElement = ticuare.element({
   y = 10,                   -- position y
   w = 400,                  -- width
   h = 60,                   -- height  
+	center = true,						-- this makes as default positioning point center of element instead of left-top corner
   colors = {1,2,3},         -- define a colors for default, hover and hold state (in this order)
   border = {                -- define border style
     colors = {4,5,6},       -- same as before
@@ -61,11 +62,35 @@ myElement = ticuare.element({
 Styles are created using *ticuare.newStyle(attributes)* and applied using *ticuare.new(attributes):style(myStyle)*.
 They can also be applied *after* creation, using *button:style(myStyle)*.
 
+### Icons
+Icons can represent images defined as sprites.
+
+Icon are defined in element by using attribute *icon*. It's attributes are *sprites* which define sprites for default, hover and held state and also *offset* which define local position. Next, known from TIC spr() API function: *key* (colorkey), *scale*, *flip*, *rotate*. And lastly, sprite *size* which corresponds to x\*y number of 8x8 sprites so value 2 means sprite 16x16.
+
+```lua
+myElement = ticuare.element({
+	x = 20,	y = 20,	w = 8, h = 8,
+	icon = {
+  	sprites = {1,2,3},	-- sprites for default, hover and held state
+  	offset = {
+    	x = 0,
+    	y = 0
+  	},
+		key = 0, 						-- default -1 so opaque
+		scale = 1,					-- default 1
+		flip = 0,						-- default 0
+		rotate = 0,					-- default 0
+		size = 1						-- default 1
+	}
+})
+```
+![Icon Example](/images/example7.gif)
+
 ### Groups
 TICuare also uses a group system, which can be used to set attributes of many elements more efficiently.
 
 ```lua
-myGroup = ticuare.newGroup()
+myGroup = ticuare.newGroup()						-- create group and assign
 
 myElement1 = ticuare.element({ 
   x = 64, y = 64, w = 20, h = 10,
@@ -74,14 +99,14 @@ myElement1 = ticuare.element({
     colors = {2,2,2},
     width = 2
   },
-  onClick = function()
-    if myElement1:getVisible() then
-      myGroup:hide()
+  onClick = function()									-- When clicked on this element
+    if myElement1:getVisible() then			-- If Element in group is visible
+      myGroup:hide()										-- Hide everything in group
     else
-     myGroup:show()
+     myGroup:show()											-- Show everything in group
     end
   end
-}):group(myGroup)
+}):group(myGroup)												-- add element to group
 
 myElement2 = ticuare.element({
   x = 64, y = 74, w = 20, h = 20,
@@ -118,10 +143,7 @@ Make sure you've properly set up bounds before calling these methods. Please not
 
 ```lua
 ticuare.element({
-  x = 20,
-  y = 60,
-  w = 20,
-  h = 20,
+  x = 20, y = 60, w = 20, h = 20,
   colors={5,5,5},
   border={
     colors={11,11,11},
@@ -130,24 +152,17 @@ ticuare.element({
   drag = {
     enabled = true,
     fixed = {
-      y = true --movement is restricted on the vertical axis
+      y = true 			--movement is restricted on the vertical axis
     },
-    bounds = { --we just set horizontal bounds
-      {
-        x = 20
-      },
-      {
-        x = 60
-      }
+    bounds = { 			--we just set horizontal bounds
+      {x = 20},			-- from position (global)
+      {x = 60}      -- to position (global)
     }
   }
 })
 
 ticuare.element({
-  x = 20,
-  y = 20,
-  w = 20,
-  h = 20,
+  x = 20, y = 20, w = 20, h = 20,
   colors={9,9,9},
   border={
     colors={14,14,14},
@@ -155,15 +170,9 @@ ticuare.element({
   },
   drag = {
     enabled = true,
-    bounds = { --we just set horizontal bounds
-      {
-        x = 20,
-	y = 20
-      },
-      {
-        x = 220,
-	y = 116
-      }
+    bounds = {
+      {x = 20, y = 20},
+      {x = 220,	y = 116}
     }
   }
 })
@@ -178,25 +187,19 @@ For anchor element2 to element1 use *element2:anchor(element1)*.
 
 ```lua
 myElement1 = ticuare.element({
-  x = 20,
-  y = 20,
-  w = 20,
-  h = 20,
+  x = 20, y = 20, w = 20, h = 20,
   colors={5,5,5},
   border={
     colors={11,11,11},
     width = 2
   },
-  drag = {
+  drag = {								-- no fixed and bounds definition make it free dragable
     enabled = true,
   }
 })
 
 myElement2 = ticuare.element({
-  x = 50,
-  y = 20,
-  w = 20,
-  h = 20,
+  x = 50, y = 20, w = 20, h = 20,
   colors={9,9,9},
   border={
     colors={14,14,14},
@@ -205,3 +208,116 @@ myElement2 = ticuare.element({
 }):anchor(myElement1)
 ```
 ![Example 5](/images/example5.gif)
+
+
+### Content and scrolling
+You can draw inside an element by setting its *content*, using element:setContent(). It only takes a function as a parameter, which will be given the *ref*, *x* and *y* attributes.
+It's needed to add atributes *x* and *y* to position of any element which is drawn in content for make it move together with main element.
+
+~~Set the *wrap* attribute to true to turn wrapping on. This will prevent the function from drawing outside the element.~~
+TIC-80 currently doesn't offer trim/wrap function in it's API and it's implement in lua significantly reduces a performance.
+
+```lua
+myElement = ticuare.element({
+  x = 20, y = 20,	w = 50,	h = 50,
+		colors={15,15,15},
+		border={
+			colors={10,10,10},
+			width = 2
+		},
+  drag = {
+    enabled = true,
+  },
+		content ={
+			w = 50,				-- set size of content
+			h = 50					-- if set with wrap attribute, so conten is drawed only in this box
+		}
+})
+```
+![Example 6](/images/example6.gif)
+
+**Scrolling** is set in the *content* atribute using *scroll* atribute like this:
+```lua
+-- start of the element definition
+	content = {
+		w = 100,
+		h = 100,
+		scroll = {
+			x = 1 -- for horisontal scroll (optional)
+			y = 1 -- for vertical scroll. Botom of content.
+		}
+	}
+-- rest of the element definition
+```
+
+You can later set the scroll for a specific axis manually using *element:setScroll({ x, y })* and retrieve scroll using *element:getScroll()*
+
+```lua
+function TIC()
+  ticuare.update(mouse())
+  local scrollY = element:getScroll().y
+  element:setScroll({ y = (scrollY+1)/2 }) --slowly lerp towards 1 (bottom)
+end
+```
+
+Lastly, it's possible to redefine content dimensions at runtime with *element:setContentDimensions(width, height)*.
+
+### Visibility and activity
+Buttons can be enabled and disabled using *button:setActive(bool)*, or *button:enable()* and *button:disable()*.
+When disabled, a button will still be updated but will ignore the mouse, making it idle.
+Likewise, they can be shown and hidden using *button:setVisible(bool)*, or *button:show()* and *button:hide()*.
+You can also retrieve the visibility and activity of a specific button with *button:getActive()* and *button:getVisible()*.
+
+*Check out the example in Groups section.*
+
+### Indexes and priority order
+Sometimes, you'll need to have a button overlaying another. This can be achieved using *element:setIndex()* or *element:toFront()*.
+You can also retrieve the index of a specific button with *element:getIndex()*.
+
+```lua
+elementfront = ticuare.element({}):style(elementStyle)
+
+elementbehind = ticuare.element({}):style(elementStyle) --elementbehind is being draw on top of buttonfront
+
+--from there, you can either do
+elementfront:toFront()
+
+--or
+elementnfront:setIndex(elementbehind:getIndex() + 1)
+
+--or
+elementbehind:setIndex(1)
+elementfront:setIndex(2)
+```
+
+### Callbacks - Called on specific events
+
+```lua
+onClick 				--button is clicked down
+onCleanRelease 	--button is cleanly released (mouse is inside the button)
+onRelease 			--button is released (mouse _can_ be outside the button, for instance if the user tries to drag it)
+onHold 					--button is held (called every frame)
+onStartHover 		--mouse has started hovering the button
+onHover 				--mouse is hovering the button (called every frame)
+onReleaseHover 	--mouse is not hovering anymore
+```
+
+Callbacks can be set just like normal attributes.
+```lua
+myStyle = ticuare.newStyle({
+  onClick = function() print("click!") end
+})
+```
+
+### Removing elements
+
+```lua
+element:remove()
+```
+Removes a specific button from TICuare.
+
+```lua
+ticuare.clear()
+```
+
+Removes every button from TICuare.
