@@ -1,6 +1,0 @@
-- v0.3.0
-  - bug fix - text isn't centered when element is centered too
-- v0.2.0
-  - bug fix - default sprites scale
-- v0.1.0
-  - first version
