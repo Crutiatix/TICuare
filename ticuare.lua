@@ -55,7 +55,7 @@ local function copyTable(object)
 end
 
 -- multiline print
-function ticuare.mlPrint(txt,x,y,c,ls,fix,fnt,key,sw) -- string; x,y position; color; line spacing; fixed letters size; use font func?; transparent color; space size
+function ticuare.mlPrint(txt,x,y,c,ls,fix,fnt,key,sw) -- string; x,y position; color; line spacing; fixed letters size; use font func?; key color; space size
 	local sl = {}
 	local width = 0
 	local width_result = 0
@@ -236,11 +236,11 @@ function ticuare:drawSelf()
 			local offset = self.text.offset or {x = 0, y = 0}
 
 
-			local wsize, hsize = ticuare.mlPrint(self.text.display,300,300, -1, self.text.spacing, self.text.fixed, self.text.font, self.text.transparent, self.text.space)
+			local wsize, hsize = ticuare.mlPrint(self.text.display,300,300, -1, self.text.spacing, self.text.fixed, self.text.font, self.text.key, self.text.space)
 			ticuare.mlPrint(self.text.display,
 				self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(wsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
 				self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-(hsize*.5) or 0)+offset.y+(self.text.center and 0 or self.border.width),
-				fcolor, self.text.spacing, self.text.fixed, self.text.font, self.text.transparent, self.text.space
+				fcolor, self.text.spacing, self.text.fixed, self.text.font, self.text.key, self.text.space
 			)
 		end
 
