@@ -1,6 +1,6 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.3.0
+-- desc:	UI library for TIC-80 v0.4.0
 -- script:	lua
 -- input:	mouse
 
@@ -54,6 +54,24 @@ local function copyTable(object)
 	return _copy(object)
 end
 
+-- multiline print
+function ticuare.mlPrint(txt,x,y,c,ls,fix,fnt,key,sw) -- string; x,y position; color; line spacing; fixed letters size; use font func?; transparent color; space size
+	local sl = {}
+	local width = 0
+	local width_result = 0
+	for l in txt:gmatch("([^\n]+)") do
+		table.insert(sl,l)
+	end
+	for i, l in ipairs(sl) do
+		if fnt then
+			width = font(l,x,y+((i-1)*ls),key,sw)
+		else
+			width = print(l,x,y+((i-1)*ls),c,fix)
+		end
+		if width > width_result then width_result = width end
+	end
+	return width, #sl*ls
+end
 -- Public methods
 
 function ticuare.element(t, f)
@@ -208,26 +226,22 @@ function ticuare:drawSelf()
 		if self.text and self.text.display and self.text.colors[1] then
 			self.text.colors[1] = self.text.colors[1] or 14
 			self.text.space = self.text.space or 5
-			self.text.transparent = self.text.transparent or 0
+			self.text.key = self.text.key or -1
+			self.text.spacing = self.text.spacing or (self.text.font and 8 or 6)
+			self.text.fixed = self.text.fixed or false
 			local fcolor
 			if (self.hold and self.text.colors[3]) then fcolor = self.text.colors[3]
 			elseif (self.hover and self.text.colors[2]) then fcolor = self.text.colors[2]
 			else fcolor = self.text.colors[1] end
-
 			local offset = self.text.offset or {x = 0, y = 0}
-			if self.text.font then
-				local fsize = font(self.text.display,-100,-100, self.text.transparent, self.text.space)
-				font(self.text.display,
-					self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(fsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
-					self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-4 or 0)+offset.y+(self.text.center and 0 or self.border.width),
-					self.text.transparent, self.text.space)
-			else
-				local psize = print(self.text.display,-100,-100, 0, self.text.fixed)
-					print(self.text.display,
-						self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(psize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
-						self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-3 or 0)+offset.y+(self.text.center and 0 or self.border.width),
-						fcolor, self.text.fixed)
-			end
+
+
+			local wsize, hsize = ticuare.mlPrint(self.text.display,300,300, -1, self.text.spacing, self.text.fixed, self.text.font, self.text.transparent, self.text.space)
+			ticuare.mlPrint(self.text.display,
+				self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(wsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
+				self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-(hsize*.5) or 0)+offset.y+(self.text.center and 0 or self.border.width),
+				fcolor, self.text.spacing, self.text.fixed, self.text.font, self.text.transparent, self.text.space
+			)
 		end
 
 		if self.content and self.drawContent then
