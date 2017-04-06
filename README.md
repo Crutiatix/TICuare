@@ -1,6 +1,8 @@
 # TICuare
 A simple and customisable UI library for [TIC-80 - tiny computer by Nesbox](https://nesbox.itch.io/tic) based on library [Uare by Ulydev](https://github.com/Ulydev/Uare)
 
+![Showcase](/images/exampleSliders.gif)
+
 Setup
 ----------------
 
