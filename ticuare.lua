@@ -1,6 +1,6 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.2
+-- desc:	UI library for TIC-80 v0.3.0
 -- script:	lua
 -- input:	mouse
 
@@ -218,14 +218,14 @@ function ticuare:drawSelf()
 			if self.text.font then
 				local fsize = font(self.text.display,-100,-100, self.text.transparent, self.text.space)
 				font(self.text.display,
-					self.x+(self.text.center and (self.w*.5)-(fsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
-					self.y+(self.text.center and (self.h*.5)-4 or 0)+offset.y+(self.text.center and 0 or self.border.width),
+					self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(fsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
+					self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-4 or 0)+offset.y+(self.text.center and 0 or self.border.width),
 					self.text.transparent, self.text.space)
 			else
 				local psize = print(self.text.display,-100,-100, 0, self.text.fixed)
 					print(self.text.display,
-						self.x+(self.text.center and (self.w*.5)-(psize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
-						self.y+(self.text.center and (self.h*.5)-3 or 0)+offset.y+(self.text.center and 0 or self.border.width),
+						self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(psize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
+						self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-3 or 0)+offset.y+(self.text.center and 0 or self.border.width),
 						fcolor, self.text.fixed)
 			end
 		end
