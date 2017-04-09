@@ -1,6 +1,6 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.4.0
+-- desc:	UI library for TIC-80 v0.5.0
 -- script:	lua
 -- input:	mouse
 
@@ -10,14 +10,14 @@
 -- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 -- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 ticuare = {name = "ticuare", elements = {}, z = 1, hz = nil}
 ticuare.__index = ticuare
-
+ticuare.mouse_events = {nothing=0,click=1,noclick=2,none=3}
 -- Private
 local ticuareMt = {__index = ticuare}
---local abs, min, max = math.abs, math.min, math.max
 
-local function withinBounds(x, y, x1, y1, x2, y2)
+local function inArea(x, y, x1, y1, x2, y2)
 	return x > x1 and x < x2 and y > y1 and y < y2
 end
 
@@ -56,35 +56,31 @@ end
 
 -- multiline print
 function ticuare.mlPrint(txt,x,y,c,ls,fix,fnt,key,sw) -- string; x,y position; color; line spacing; fixed letters size; use font func?; key color; space size
-	local sl = {}
-	local width = 0
-	local width_result = 0
+	local width, width_result, li = 0, 0, 0
 	for l in txt:gmatch("([^\n]+)") do
-		table.insert(sl,l)
-	end
-	for i, l in ipairs(sl) do
+		li = li+1
 		if fnt then
-			width = font(l,x,y+((i-1)*ls),key,sw)
+			width = font(l,x,y+((li-1)*ls),key,sw)
 		else
-			width = print(l,x,y+((i-1)*ls),c,fix)
+			width = print(l,x,y+((li-1)*ls),c,fix)
 		end
 		if width > width_result then width_result = width end
 	end
-	return width, #sl*ls
+	return width, li*ls
 end
 -- Public methods
 
-function ticuare.element(t, f)
+function ticuare.element(element_type, element_obj)
 
-	if not f then f = t t = "element" end
+	if not element_obj then element_obj = element_type element_type = "element" end
 
-	local ticuareObj = f
+	local ticuareObj = element_obj
 	setmetatable(ticuareObj, ticuare)
 
 	ticuareObj.hover, ticuareObj.click = false, false
-	ticuareObj.active = f.active or true
-	ticuareObj.drag = f.drag or {enabled = false}
-	ticuareObj.visible = f.visible or true
+	ticuareObj.active = element_obj.active or true
+	ticuareObj.drag = element_obj.drag or {enabled = false}
+	ticuareObj.visible = element_obj.visible or true
 
 
 	if ticuareObj.content then
@@ -92,7 +88,7 @@ function ticuare.element(t, f)
 		ticuareObj.content.w, ticuareObj.content.h = ticuareObj.content.w or ticuareObj.w, ticuareObj.content.h or ticuareObj.h
 	end
 
-	ticuareObj.type, ticuareObj.z = t, ticuare.z
+	ticuareObj.type, ticuareObj.z = element_type, ticuare.z
 	ticuare.z = ticuare.z + 1 ticuare.hz = ticuare.z --index stuff
 	table.insert(ticuare.elements, ticuareObj)
 	return ticuareObj
@@ -108,72 +104,95 @@ function ticuare.newGroup() local t = {type = "group", elements = {}} setmetatab
 -- Update
 --
 
-function ticuare:updateSelf(mx, my, mp, e)
+function ticuare:updateSelf(mouse_x, mouse_y, mouse_press, mouse_event)
 
-	local mlc = e ~= "s" and mp or false
+	local mouse_holding, mouse_over, element_in_focus, hovered, held
+	local me = ticuare.mouse_events
 
-	local rwb = withinBounds(mx, my, self.x, self.y, self.x+self.w, self.y+self.h)
+	mouse_holding = mouse_event ~= me.none and mouse_press or false
+
+	mouse_over = inArea(mouse_x, mouse_y, self.x, self.y, self.x+self.w, self.y+self.h)
 	if self.center then
-		rwb = withinBounds(mx, my, self.x-self.w*.5, self.y-self.h*.5, self.x+self.w*.5, self.y+self.h*.5)
+		mouse_over = inArea(mouse_x, mouse_y, self.x-self.w*.5, self.y-self.h*.5, self.x+self.w*.5, self.y+self.h*.5)
 	end
 
-	local wb = e ~= "s" and rwb or false
+	element_in_focus = mouse_event ~= me.none and mouse_over or false
 
-	local thover, thold = self.hover, self.hold
+	hovered, held = self.hover, self.hold
 
-	self.hover = wb or (self.drag.enabled and ticuare.holdt and ticuare.holdt.obj == self)
+	self.hover = element_in_focus or (self.drag.enabled and ticuare.draging_obj and ticuare.draging_obj.obj == self)
 
-	self.hold = ((e == "c" and wb) and true) or (mlc and self.hold) or ((wb and e ~= "r" and self.hold))
+	self.hold = ((mouse_event == me.click and element_in_focus) and true) or
+		(mouse_holding and self.hold) or ((element_in_focus and mouse_event ~= me.noclick and self.hold))
 
-	if e == "c" and wb and self.onClick then --clicked
+	if mouse_event == me.click and element_in_focus and self.onClick then --clicked
 		self.onClick()
-	elseif (e == "r" and wb and thold) and self.onCleanRelease then
+	elseif (mouse_event == me.noclick and element_in_focus and held) and self.onCleanRelease then
 		self.onCleanRelease()
-	elseif ((e == "r" and wb and thold) or (self.hold and not wb)) and self.onRelease then --released (or mouse has left element, still holding temporarly)
+	elseif ((mouse_event == me.noclick and element_in_focus and held) or (self.hold and not element_in_focus)) and self.onRelease then --released (or mouse has left element, still holding temporarly)
 		self.onRelease()
 	elseif self.hold and self.onHold then --holding
 		self.onHold()
-	elseif not thover and self.hover and self.onStartHover then --started hovering
+	elseif not hovered and self.hover and self.onStartHover then --started hovering
 		self.onStartHover()
 	elseif self.hover and self.onHover then --hovering
 		self.onHover()
-	elseif thover and not self.hover and self.onReleaseHover then --released hover
+	elseif hovered and not self.hover and self.onReleaseHover then --released hover
 		self.onReleaseHover()
 	end
 
-	if self.hold and (not wb or self.drag.enabled) and not ticuare.holdt then
-		self.hold = self.drag.enabled ticuare.holdt = {obj = self, d = {x = self.x-mx, y = self.y-my}}
-	elseif not self.hold and wb and (ticuare.holdt and ticuare.holdt.obj == self) then
-		self.hold = true ticuare.holdt = nil
+	if self.hold and (not element_in_focus or self.drag.enabled) and not ticuare.draging_obj then
+		self.hold = self.drag.enabled
+		ticuare.draging_obj = {obj = self, d = {x = self.x-mouse_x, y = self.y-mouse_y}} -- save what and where is element holded
+	elseif not self.hold and element_in_focus and (ticuare.draging_obj and ticuare.draging_obj.obj == self) then
+		self.hold = true
+		ticuare.draging_obj = nil
 	end
 
-	if ticuare.holdt and ticuare.holdt.obj == self and self.drag.enabled then --drag
-		self.x = (not self.drag.fixed or not self.drag.fixed[1]) and mx + ticuare.holdt.d.x or self.x
-		self.y = (not self.drag.fixed or not self.drag.fixed[2]) and my + ticuare.holdt.d.y or self.y
-		if self.drag.bounds then
-			self.drag.bounds[1].x = self.drag.bounds[1].x or self.x
-			self.drag.bounds[1].y = self.drag.bounds[1].y or self.y
-			self.drag.bounds[2].x = self.drag.bounds[2].x or self.x
-			self.drag.bounds[2].y = self.drag.bounds[2].y or self.y
 
-			self.x = (self.drag.bounds[1].x and self.x < self.drag.bounds[1].x) and self.drag.bounds[1].x or self.x
-			self.y = (self.drag.bounds[1].y and self.y < self.drag.bounds[1].y) and self.drag.bounds[1].y or self.y
-			self.x = (self.drag.bounds[2].x and self.x > self.drag.bounds[2].x) and self.drag.bounds[2].x or self.x
-			self.y = (self.drag.bounds[2].y and self.y > self.drag.bounds[2].y) and self.drag.bounds[2].y or self.y
 
+
+	-- DRAGGING
+	if ticuare.draging_obj and ticuare.draging_obj.obj == self and self.drag.enabled then
+		self.x = (not self.drag.fixed or not self.drag.fixed.x) and mouse_x + ticuare.draging_obj.d.x or self.x
+		self.y = (not self.drag.fixed or not self.drag.fixed.y) and mouse_y + ticuare.draging_obj.d.y or self.y
+
+		local bounds = self.drag.bounds
+		if bounds then
+			if bounds.x then
+				self.x = (bounds.x[1] and self.x < bounds.x[1]) and bounds.x[1] or self.x
+				self.x = (bounds.x[2] and self.x > bounds.x[2]) and bounds.x[2] or self.x
+			end
+			if bounds.y then
+				self.y = (bounds.y[1] and self.y < bounds.y[1]) and bounds.y[1] or self.y
+				self.y = (bounds.y[2] and self.y > bounds.y[2]) and bounds.y[2] or self.y
+			end
 		end
+
 		if self.track then
 			self:anchor(self.track.ref)
 		end
 	end
 
-	return wb
 
+	return element_in_focus
 end
 
 function ticuare:updateTrack()
-	if self.track then
-		self.x, self.y = self.track.ref.x + self.track.d.x, self.track.ref.y + self.track.d.y
+	local bounds, track = self.drag.bounds, self.track
+	if track then
+		self.x, self.y = track.ref.x + track.d.x, track.ref.y + track.d.y
+
+		if bounds and bounds.relative then
+			if bounds.x then
+				bounds.x[1] = track.ref.x + track.b.x[1] or nil
+				bounds.x[2] = track.ref.x + track.b.x[2] or nil
+			end
+			if bounds.y then
+				bounds.y[1] = track.ref.y + track.b.y[1] or nil
+				bounds.y[2] = track.ref.y + track.b.y[2] or nil
+			end
+		end
 	end
 end
 
@@ -181,71 +200,104 @@ end
 -- Draw
 --
 function ticuare:drawSelf()
-
 	if self.visible then
-		local tempX, tempY = self.x, self.y
+		local color, shadow_color, border_color, text_shadow_color, text_color,
+			sprite, tempX, tempY, text_width, text_height, text_x, text_y,
+			sprite_offset, text_offset, text_shadow_offset, shadow_offset
+		local shadow, border, text, icon = self.shadow, self.border, self.text, self.icon
+		tempX, tempY = self.x, self.y
 		if self.center then tempX, tempY = self.x-self.w*.5, self.y-self.h*.5 end
 
-		if self.colors then
-			local colorf = ((self.hold and self.colors[3]) and self.colors[3]) or ((self.hover and self.colors[2]) and self.colors[2]) or self.colors[1] or nil
-			if colorf then rect(tempX, tempY, self.w, self.h, colorf) end
+
+		if shadow and shadow.colors then
+			shadow.offset = shadow.offset or {x=1,y=1}
+			shadow_color = ((self.hold and shadow.colors[3]) and shadow.colors[3]) or ((self.hover and shadow.colors[2]) and shadow.colors[2]) or shadow.colors[1] or nil
+			if shadow_color then rect(tempX+shadow.offset.x, tempY+shadow.offset.y,self.w, self.h, shadow_color) end
 		end
 
-		if self.border and self.border.colors and self.border.width then
-			local colorb = ((self.hold and self.border.colors[3]) and self.border.colors[3]) or ((self.hover and self.border.colors[2]) and self.border.colors[2]) or self.border.colors[1] or nil
-			if colorb then
-				for b=0,self.border.width-1 do
-					rectb(tempX+b, tempY+b, self.w-2*b, self.h-2*b, colorb)
+		if self.colors then
+			color = ((self.hold and self.colors[3]) and self.colors[3]) or ((self.hover and self.colors[2]) and self.colors[2]) or self.colors[1] or nil
+			if color then rect(tempX, tempY, self.w, self.h, color) end
+		end
+
+		if border and border.colors and border.width then
+			border_color = ((self.hold and border.colors[3]) and border.colors[3]) or ((self.hover and border.colors[2]) and border.colors[2]) or border.colors[1] or nil
+			if border_color then
+				for b=0,border.width-1 do
+					rectb(tempX+b, tempY+b, self.w-2*b, self.h-2*b, border_color)
 				end
 			end
 		end
 
-		if self.icon and self.icon.sprites and #self.icon.sprites > 0 then
-			local sprite = ((self.hold and self.icon.sprites[3]) and self.icon.sprites[3]) or ((self.hover and self.icon.sprites[2]) and self.icon.sprites[2]) or self.icon.sprites[1]
-			local offset = self.icon.offset or {x=0,y=0}
+		if icon and icon.sprites and #icon.sprites > 0 then
+			sprite = ((self.hold and icon.sprites[3]) and icon.sprites[3]) or ((self.hover and icon.sprites[2]) and icon.sprites[2]) or icon.sprites[1]
+			sprite_offset = icon.offset or {x=0,y=0}
 
-			self.icon.key = self.icon.key or -1
-			self.icon.scale = self.icon.scale or 1
-			self.icon.flip = self.icon.flip or 0
-			self.icon.rotate = self.icon.rotate or 0
-			self.icon.size = self.icon.size or 1
-			for x=1,self.icon.size do
-				for y=1,self.icon.size do
+			icon.key = icon.key or -1
+			icon.scale = icon.scale or 1
+			icon.flip = icon.flip or 0
+			icon.rotate = icon.rotate or 0
+			icon.size = icon.size or 1
+			for x=1,icon.size do
+				for y=1,icon.size do
 					spr(sprite+(x-1)+((y-1)*16),
-						(tempX+(self.center and 0 or self.w*.5)+offset.x-4),
-						(tempY+(self.center and 0 or self.h*.5)+offset.y-4),
-						self.icon.key,
-						self.icon.scale,
-						self.icon.flip,
-						self.icon.rotate)
+						(tempX+(self.center and 0 or self.w*.5)+sprite_offset.x-4),
+						(tempY+(self.center and 0 or self.h*.5)+sprite_offset.y-4),
+						icon.key,
+						icon.scale,
+						icon.flip,
+						icon.rotate)
 			 	end
 			end
 
 		end
 
-		if self.text and self.text.display and self.text.colors[1] then
-			self.text.colors[1] = self.text.colors[1] or 14
-			self.text.space = self.text.space or 5
-			self.text.key = self.text.key or -1
-			self.text.spacing = self.text.spacing or (self.text.font and 8 or 6)
-			self.text.fixed = self.text.fixed or false
-			local fcolor
-			if (self.hold and self.text.colors[3]) then fcolor = self.text.colors[3]
-			elseif (self.hover and self.text.colors[2]) then fcolor = self.text.colors[2]
-			else fcolor = self.text.colors[1] end
-			local offset = self.text.offset or {x = 0, y = 0}
+		--draw text
+		if text and text.display and text.colors[1] then
+			text.colors[1] = text.colors[1] or 14
+			text.space = text.space or 5
+			text.key = text.key or -1
+			text.spacing = text.spacing or (text.font and 8 or 6)
+			text.fixed = text.fixed or false
 
 
-			local wsize, hsize = ticuare.mlPrint(self.text.display,300,300, -1, self.text.spacing, self.text.fixed, self.text.font, self.text.key, self.text.space)
-			ticuare.mlPrint(self.text.display,
-				self.x-(self.center and (self.w*0.5) or 0)+(self.text.center and (self.w*.5)-(wsize*.5) or 0)+offset.x+(self.text.center and 0 or self.border.width),
-				self.y-(self.center and (self.h*0.5) or 0)+(self.text.center and (self.h*.5)-(hsize*.5) or 0)+offset.y+(self.text.center and 0 or self.border.width),
-				fcolor, self.text.spacing, self.text.fixed, self.text.font, self.text.key, self.text.space
-			)
+			-- set color for text
+			if (self.hold and text.colors[3]) then
+				text_color = text.colors[3]
+			elseif (self.hover and text.colors[2]) then
+				text_color = text.colors[2]
+			else
+				text_color = text.colors[1]
+			end
+			-- set color for text shadow
+			if text.shadow then
+				if (self.hold and text.shadow.colors[3]) then
+					text_shadow_color = text.colors[3]
+				elseif (self.hover and text.shadow.colors[2]) then
+					text_shadow_color = text.shadow.colors[2]
+				else
+					text_shadow_color = text.shadow.colors[1]
+				end
+				text_shadow_offset = text.shadow.offset or {x=1, y=1}
+			end
+			-- initiate required vars
+			text_offset = text.offset or {x = 0, y = 0}
+			text_width, text_height = ticuare.mlPrint(text.display,300,300, -1, text.spacing, text.fixed, text.font, text.key, text.space)
+			text_x = self.x-(self.center and (self.w*0.5) or 0)+(text.center and (self.w*.5)-(text_width*.5) or 0)+text_offset.x+(text.center and 0 or border.width)
+			text_y = self.y-(self.center and (self.h*0.5) or 0)+(text.center and (self.h*.5)-(text_height*.5) or 0)+text_offset.y+(text.center and 0 or border.width)
+			-- drawing text and text shadow
+			if text.shadow and text_shadow_color then
+				ticuare.mlPrint(text.display, text_x+text_shadow_offset.x, text_y+text_shadow_offset.y, text_shadow_color, text.spacing, text.fixed, text.font, text.key, text.space)
+				ticuare.mlPrint(text.display, text_x, text_y, text_color, text.spacing, text.fixed, text.font, text.key, text.space)
+			else
+				ticuare.mlPrint(text.display, text_x, text_y, text_color, text.spacing, text.fixed, text.font, text.key, text.space)
+			end
 		end
-
+		-- drawing element content
 		if self.content and self.drawContent then
+			if self.content.wrap and clip then clip(self.x+border.width, self.y+border.width, self.w-(2*border.width), self.h-(2*border.width)) end
 			self:renderContent()
+			if self.content.wrap and clip then clip() end
 		end
 	end
 end
@@ -295,29 +347,30 @@ end
 -- Miscellaneous
 --
 
-function ticuare.update(x, y, p)
+function ticuare.update(mouse_x, mouse_y, mouse_press)
 
-	if x and y then
+	if mouse_x and mouse_y then
+		local me = ticuare.mouse_events
+		local mouse_event, focused, updateQueue, elemt = me.nothing, false, {}, nil
 
-		local e, c = "n", p
-		if ticuare.c and not c then
-			ticuare.c = false e = "r" ticuare.holdt = nil
-		elseif not ticuare.c and c then
-			ticuare.c = true e = "c" ticuare.holdt = nil
+		if ticuare.click and not mouse_press then
+			ticuare.click = false
+			mouse_event = me.noclick
+			ticuare.draging_obj = nil
+		elseif not ticuare.click and mouse_press then
+			ticuare.click = true
+			mouse_event = me.click
+			ticuare.draging_obj = nil
 		end
 		--update every element/window first...
-		local focused = false
-
-		local updateQueue = {}
-
 		for i = 1, #ticuare.elements do table.insert(updateQueue, ticuare.elements[i]) end
 
 		table.sort(updateQueue, function(a, b) return a.z > b.z end)
 
 		for i = 1, #updateQueue do
-			local elemt = updateQueue[i]
+			elemt = updateQueue[i]
 			if elemt then
-				if elemt:updateSelf(x, y, p,((focused or (ticuare.holdt and ticuare.holdt.obj ~= elemt)) or not elemt.active) and "s" or e) then
+				if elemt:updateSelf(mouse_x, mouse_y, mouse_press,((focused or (ticuare.draging_obj and ticuare.draging_obj.obj ~= elemt)) or not elemt.active) and me.none or mouse_event) then
 					focused = true
 				end
 			end
@@ -329,6 +382,7 @@ function ticuare.update(x, y, p)
 			end
 		end
 	end
+
 end
 
 function ticuare.draw()
@@ -360,20 +414,22 @@ function ticuare:style(style)
 end
 
 function ticuare:anchor(other)
-	if self.type == "group" then
-		self.elements[1].track = {ref = other.elements[1], d = {x = self.x-other.elements[1].x, y = self.y-otherelements.other.y}}
-	else
-		self.track = {ref = other, d = {x = self.x-other.x, y = self.y-other.y}}
+	local b, b_x_min, b_x_max, b_y_min, b_y_max = self.drag.bounds, nil, nil, nil, nil
+	if b and b.x then
+		b_x_min = b.x[1] - other.x
+		b_x_max = b.x[2] - other.x
+	elseif b and b.y then
+		b_y_min = b.y[1] - other.y
+		b_y_max = b.y[2] - other.y
 	end
 
-
+	self.track = {ref = other, d = {x = self.x-other.x, y = self.y-other.y}, b={x={b_x_min,b_x_max},y={b_y_min,b_y_max}}}
 
 	return self
 end
 
 function ticuare:group(group)
 	table.insert(group.elements, self)
-
 	return self
 end
 
@@ -422,21 +478,21 @@ function ticuare:setDragBounds(bounds)
 end
 
 function ticuare:setHorizontalRange(n)
-	self.x = self.drag.bounds[1].x + (self.drag.bounds[2].x-self.drag.bounds[1].x)*n
+	self.x = self.drag.bounds.x[1] + (self.drag.bounds.x[2]-self.drag.bounds.x[1])*n
 end
 
 function ticuare:setVerticalRange(n)
-	self.y = self.drag.bounds[1].y + (self.drag.bounds[2].y-self.drag.bounds[1].y)*n
+	self.y = self.drag.bounds.y[1] + (self.drag.bounds.y[2]-self.drag.bounds.y[1])*n
 end
 
 function ticuare:getHorizontalRange()
-	assert(self.drag.bounds and self.drag.bounds[1] and self.drag.bounds[2] and self.drag.bounds[1].x and self.drag.bounds[2].x, "Element must have 2 horizontal boundaries")
-	return (self.x-self.drag.bounds[1].x) / (self.drag.bounds[2].x-self.drag.bounds[1].x)
+	assert(self.drag.bounds and self.drag.bounds.x and self.drag.bounds.x and self.drag.bounds.x[1] and self.drag.bounds.x[2], "Element must have 2 horizontal boundaries")
+	return (self.x-self.drag.bounds.x[1]) / (self.drag.bounds.x[2]-self.drag.bounds.x[1])
 end
 
 function ticuare:getVerticalRange()
-	assert(self.drag.bounds and self.drag.bounds[1] and self.drag.bounds[2] and self.drag.bounds[1].y and self.drag.bounds[2].y, "Element must have 2 vertical boundaries")
-	return (self.y-self.drag.bounds[1].y) / (self.drag.bounds[2].y-self.drag.bounds[1].y)
+	assert(self.drag.bounds and self.drag.bounds.y and self.drag.bounds.y and self.drag.bounds.y[1] and self.drag.bounds.y[2], "Element must have 2 vertical boundaries")
+	return (self.y-self.drag.bounds.y[1]) / (self.drag.bounds.y[2]-self.drag.bounds.y[1])
 end
 
 --Z-Index
