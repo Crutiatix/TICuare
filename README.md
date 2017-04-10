@@ -3,6 +3,8 @@ A simple and customisable UI library for [TIC-80 - tiny computer by Nesbox](http
 
 ![Showcase](/images/exampleSliders.gif)
 
+## Updated documentation (for v0.5.0) at [Wiki](https://github.com/Crutiatix/TICuare/wiki)
+
 Setup
 ----------------
 
