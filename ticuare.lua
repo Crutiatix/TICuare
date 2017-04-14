@@ -1,10 +1,9 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.6.0
+-- desc:	UI library for TIC-80 v0.6.1
 -- script:	lua
 -- input:	mouse
 
--- Credits: (c) 2015 Ulysse Ramage
 -- Copyright (c) 2017 Crutiatix
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 -- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -244,8 +243,8 @@ function ticuare:drawSelf()
 				for y=1,icon.extent.y do
 					spr(sprite+(x-1)+((y-1)*16),
 
-						(tempX+(icon.align.x==1 and self.w*.5 or (icon.align.x==2 and self.w or 0))+sprite_offset.x+((x-1)*icon.measure)*8),
-						(tempY+(icon.align.y==1 and self.h*.5 or (icon.align.y==2 and self.h or 0))+sprite_offset.y+((y-1)*icon.measure)*8),
+						(tempX+(icon.align.x==1 and self.w*.5-((x*icon.measure*8)/2) or (icon.align.x==2 and self.w-(x*icon.measure*8) or 0))+sprite_offset.x),
+						(tempY+(icon.align.y==1 and self.h*.5-((y*icon.measure*8)/2) or (icon.align.y==2 and self.h-(y*icon.measure*8) or 0))+sprite_offset.y),
 						icon.key,
 						icon.measure,
 						icon.flip,
