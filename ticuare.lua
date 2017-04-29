@@ -1,6 +1,6 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.8.0
+-- desc:	UI library for TIC-80 v0.7.0
 -- script:	lua
 -- input:	gamepad
 
