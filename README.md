@@ -2,6 +2,7 @@
 
 A simple and customisable UI library for [TIC-80 - tiny computer](https://nesbox.itch.io/tic) based on library [Uare](https://github.com/Ulydev/Uare)
 
+![Gamepad](/images/gamepadinput.gif)
 ![Edgar](/images/edgar.gif)
 
 ## Description
@@ -13,11 +14,10 @@ Language: Lua
 
 - Size (roughly) :
 
-  - ticuare   	  - 17 KB
+  - ticuare   	  - 20 KB
   
-  - ticuare.min   - 11 KB
+  - ticuare.min   - 13 KB
   
-  - ticuare.micro -  9 KB - not compatible with others, a special shortened names of symbols. [Micro version documentation](../../wiki/Micro)
 
 ## [Documentation](https://github.com/Crutiatix/TICuare/wiki)
 
