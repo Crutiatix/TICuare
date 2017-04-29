@@ -2,7 +2,7 @@
 
 A simple and customisable UI library for [TIC-80 - tiny computer](https://nesbox.itch.io/tic) based on library [Uare](https://github.com/Ulydev/Uare)
 
-![Gamepad](/images/gamepadinput.gif)
+[![Gamepad](/images/gamepadinput.gif)](http://tic.computer/play?cart=87)
 ![Edgar](/images/edgar.gif)
 
 ## Description
