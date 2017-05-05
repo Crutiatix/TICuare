@@ -1,8 +1,8 @@
 -- title:	TICuare
 -- author:	Crutiatix
--- desc:	UI library for TIC-80 v0.7.0
+-- desc:	UI library for TIC-80 v0.8.0
 -- script:	lua
--- input:	gamepad
+-- input:	mouse
 
 -- Copyright (c) 2017 Crutiatix
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -40,6 +40,11 @@ local function pal(c0,c1)
 	else poke4(0x3FF0*2+c0,c1)end
 end
 
+function ticuare.lerp(a, b, k)
+  if a == b then return a else
+    if math.abs(a-b) < 0.005 then return b else return a * (1-k) + b * k end
+  end
+end
 
 local function copyTable(object)
 	local lookup_table = {}
@@ -59,41 +64,52 @@ local function copyTable(object)
 	return _copy(object)
 end
 
--- multiline print
-function ticuare.print(txt,x,y,c,h,fix) -- string; x,y position; color; line height; fixed letters width
-	local width, width_result, li = 0, 0, 0
-	for l in txt:gmatch("([^\n]+)") do
-		li = li+1
-		width = print(l,x,y+((li-1)*h),c,fix)
-		if width > width_result then width_result = width end
+local function checkColors(hold, hover, one, two, three)
+	if hold then
+		return one
+	elseif hover then
+		return two
+	else
+		return three
 	end
-	return width, li*h
-end
-
--- multiline font
-function ticuare.font(txt,x,y,c,h,key,space_width) -- string; x,y position; color/-s; line height; transparent color; space width
-	local width, width_result, li = 0, 0, 0
-	for l in txt:gmatch("([^\n]+)") do
-		li = li+1
-		if type(key)=="table" and type(key[1]) == "table" then
-			for si, sc in ipairs(key[1]) do
-				if type(c)=="table" then
-					pal(sc,c[si])
-				else
-					pal(sc,c)
-				end
-			end
-		else
-			pal(key[1],c)
-		end
-		width = font(l,x,y+((li-1)*h),key[2],space_width)
-		pal()
-		if width > width_result then width_result = width end
-	end
-	return width, li*h
-
 end
 -- Public methods
+
+function ticuare.print(text,x,y,color,fixed,scale) -- string; x,y position; color; line height; fixed letters width
+	fixed = fixed or false
+	scale = scale or 1
+	local _, lines_count = text:gsub("\n","")
+	if color then
+		local width, height = print(text,x,y,color,fixed,scale), (6+lines_count) *scale *(lines_count+1)
+	end
+	return width, height
+end
+
+function ticuare.font(text,x,y,colors,key,space_w,space_h,fixed,scale) -- string; x,y position; color/-s; line height; transparent color; space width
+	key = key or -1
+	space_w = space_w or 8
+	space_h = space_h or 8
+	fixed = fixed or false
+	scale = scale or 1
+	local _, lines_count = text:gsub("\n","")
+	if type(key)=="table" and type(key[1]) == "table" then
+		for si, sc in ipairs(key[1]) do
+			if type(colors)=="table" then
+				pal(sc,colors[si])
+			else
+				pal(sc,colors)
+			end
+		end
+		key=key[2]
+	end
+	local width
+	if colors then
+		width = font(text,x,y,key,space_w,space_h,fixed,scale)
+	end
+	pal()
+	return width, (space_h+lines_count)*scale*(1+lines_count)
+end
+
 
 function ticuare.element(element_type, element_obj)
 
@@ -152,40 +168,37 @@ function ticuare:updateSelf(args)
 
 		hovered, held = self.hover, self.hold
 
-		self.hover = element_in_focus or (self.drag.activity and ticuare.draging_obj and ticuare.draging_obj.obj == self)
+		self.hover = element_in_focus or (self.drag.active and ticuare.draging_obj and ticuare.draging_obj.obj == self)
 
 		self.hold = ((mouse_event == me.click and element_in_focus) and true) or
 			(mouse_holding and self.hold) or ((element_in_focus and mouse_event ~= me.noclick and self.hold))
 
 		if mouse_event == me.click and element_in_focus and self.onClick then --clicked
-			self.onClick()
+			self.onClick(self)
 		elseif (mouse_event == me.noclick and element_in_focus and held) and self.onCleanRelease then
-			self.onCleanRelease()
+			self.onCleanRelease(self)
 		elseif ((mouse_event == me.noclick and element_in_focus and held) or (self.hold and not element_in_focus)) and self.onRelease then --released (or mouse has left element, still holding temporarly)
-			self.onRelease()
+			self.onRelease(self)
 		elseif self.hold and self.onPress then --holding
-			self.onPress()
+			self.onPress(self)
 		elseif not hovered and self.hover and self.onStartHover then --started hovering
-			self.onStartHover()
+			self.onStartHover(self)
 		elseif self.hover and self.onHover then --hovering
-			self.onHover()
+			self.onHover(self)
 		elseif hovered and not self.hover and self.onReleaseHover then --released hover
-			self.onReleaseHover()
+			self.onReleaseHover(self)
 		end
 
-		if self.hold and (not element_in_focus or self.drag.activity) and not ticuare.draging_obj then
-			self.hold = self.drag.activity
+		if self.hold and (not element_in_focus or self.drag.active) and not ticuare.draging_obj then
+			self.hold = self.drag.active
 			ticuare.draging_obj = {obj = self, d = {x = tempX-mouse_x, y = tempY-mouse_y}} -- save what and where is element holded
 		elseif not self.hold and element_in_focus and (ticuare.draging_obj and ticuare.draging_obj.obj == self) then
 			self.hold = true
 			ticuare.draging_obj = nil
 		end
 
-
-
-
 		-- DRAGGING
-		if ticuare.draging_obj and ticuare.draging_obj.obj == self and self.drag.activity then
+		if ticuare.draging_obj and ticuare.draging_obj.obj == self and self.drag.active then
 			self.x = (not self.drag.fixed or not self.drag.fixed.x) and mouse_x + ticuare.draging_obj.d.x or self.x
 			self.y = (not self.drag.fixed or not self.drag.fixed.y) and mouse_y + ticuare.draging_obj.d.y or self.y
 
@@ -220,19 +233,19 @@ function ticuare:updateSelf(args)
 			(holding and self.hold) or ((element_in_focus and args.event ~= me.noclick and self.hold))
 
 		if args.event == me.click and element_in_focus and self.onClick then --clicked
-			self.onClick()
+			self.onClick(self)
 		elseif (args.event == me.noclick and element_in_focus and held) and self.onCleanRelease then
-			self.onCleanRelease()
+			self.onCleanRelease(self)
 		elseif ((args.event == me.noclick and element_in_focus and held) or (self.hold and not element_in_focus)) and self.onRelease then --released (or mouse has left element, still holding temporarly)
-			self.onRelease()
+			self.onRelease(self)
 		elseif self.hold and self.onPress then --holding
-			self.onPress()
+			self.onPress(self)
 		elseif not hovered and self.hover and self.onStartHover then --started hovering
-			self.onStartHover()
+			self.onStartHover(self)
 		elseif self.hover and self.onHover then --hovering
-			self.onHover()
+			self.onHover(self)
 		elseif hovered and not self.hover and self.onReleaseHover then --released hover
-			self.onReleaseHover()
+			self.onReleaseHover(self)
 		end
 		
 		return element_in_focus
@@ -265,13 +278,14 @@ end
 --
 -- Draw
 --
-function ticuare:drawSelf()
+
+function ticuare:drawSelf ()
 	if self.visibility then
-		local color, shadow_color, border_color, text_shadow_color, text_color,
-			sprite, tempX, tempY, text_width, text_height, text_x, text_y,
+		local color, shadow_color, border_color, text_shadow_color, text_color, text_shadow, text_colors,
+			sprite, tempX, tempY, text_width, text_height, text_x, text_y, border_colors,
 			sprite_offset, text_offset, text_shadow_offset, shadow_offset, 
-			border_width
-		local shadow, border, text, icon = self.shadow, self.border, self.text, self.icon
+			border_width, border_key, border_sprites, tile, dbl_border_width, text_align
+		local shadow, border, text, icon, tiled, colors = self.shadow, self.border, self.text, self.icon, self.tiled, self.colors
 
 		tempX = self.x-(self.align.x==1 and self.w*.5-1 or (self.align.x==2 and self.w-1 or 0))
 		tempY = self.y-(self.align.y==1 and self.h*.5-1 or (self.align.y==2 and self.h-1 or 0))
@@ -279,142 +293,154 @@ function ticuare:drawSelf()
 
 		if shadow and shadow.colors then
 			shadow.offset = shadow.offset or {x=1,y=1}
-			shadow_color = ((self.hold and shadow.colors[3]) and shadow.colors[3]) or ((self.hover and shadow.colors[2]) and shadow.colors[2]) or shadow.colors[1] or nil
+			shadow_color = checkColors(self.hold,self.hover, shadow.colors[3], shadow.colors[2], shadow.colors[1])
 			if shadow_color then rect(tempX+shadow.offset.x, tempY+shadow.offset.y,self.w, self.h, shadow_color) end
 		end
 
-		if self.colors then
-			color = ((self.hold and self.colors[3]) and self.colors[3]) or ((self.hover and self.colors[2]) and self.colors[2]) or self.colors[1] or nil
+		if colors then
+			color = checkColors(self.hold,self.hover,colors[3],colors[2],colors[1])
 			if color then rect(tempX, tempY, self.w, self.h, color) end
 		end
+		
+		border_width = border and (border.width) or 0
+		dbl_border_width = 2*border_width
+		
+		if tiled then
+			tiled.scale = tiled.scale or 1
+			tiled.key = tiled.key or -1
+			tiled.flip = tiled.flip or 0
+			tiled.rotate = tiled.rotate or 0
+			tiled.w = tiled.w or 1
+			tiled.h = tiled.h or 1
+			tile = checkColors(self.hold,self.hover,tiled.sprites[3],tiled.sprites[2],tiled.sprites[1])
+						
+			if tile then 
+				clip(tempX+border_width, tempY+border_width, self.w-dbl_border_width, self.h-dbl_border_width)
+				for x=0,self.w+(8*tiled.w)*tiled.scale,(8*tiled.w)*tiled.scale do
+					for y=0,self.h+(8*tiled.h)*tiled.scale,(8*tiled.h)*tiled.scale do
+						spr(tile,tempX+x+border_width,tempY+y+border_width,tiled.key, tiled.scale, tiled.flip, tiled.rotate, tiled.w, tiled.h)
+					end
+				end
+				clip()
+			end
+		end
+		
+		
+		-- drawing element content
+		if self.content and self.drawContent then
+			if self.content.wrap and clip then clip(tempX+border_width, tempY+border_width, self.w-dbl_border_width, self.h-dbl_border_width) end
+			self:renderContent()
+			if self.content.wrap and clip then clip() end
+		end
 
-		if border and border.colors and border.width then
-			border_width = border.width or 0
-			border_color = ((self.hold and border.colors[3]) and border.colors[3]) or ((self.hover and border.colors[2]) and border.colors[2]) or border.colors[1] or nil
+		if border and border.colors then
+			border_colors = border.colors
+			border_color = checkColors(self.hold, self.hover, border_colors[3],border_colors[2],border_colors[1])
+	
 			if border_color then
 				for b=0,border.width-1 do
 					rectb(tempX+b, tempY+b, self.w-2*b, self.h-2*b, border_color)
 				end
 			end
-		else
-			border_width=0
 		end
+		
+		if border and border.sprites then
+			border_key = border.key or -1
+			border_sprites = checkColors(self.hold, self.hover,border.sprites[3],border.sprites[2],border.sprites[1])
 
+			if border_sprites then
+				clip(tempX+8,tempY,self.w-16+1,self.h)
+				for x=8,self.w-9,8 do
+					spr(border_sprites[2], tempX+x, tempY, border_key, 1, 0, 0)
+					spr(border_sprites[2], tempX+x, tempY+self.h-8, border_key, 1, 0, 2)
+				end
+				clip()
+				spr(border_sprites[1], tempX, tempY, border_key, 1, 0, 0)
+				spr(border_sprites[1], tempX+self.w-8, tempY, border_key, 1, 0, 1)
+				clip(tempX,tempY+8,self.w,self.h-16+1)
+				for y=8,self.h-9,8 do
+					spr(border_sprites[2], tempX, tempY+y, border_key, 1, 0, 3)
+					spr(border_sprites[2], tempX+self.w-8, tempY+y, border_key, 1, 2, 1)
+				end
+				clip()
+				spr(border_sprites[1], tempX+self.w-8, tempY+self.h-8, border_key, 1, 0, 2)
+				spr(border_sprites[1], tempX, tempY+self.h-8, border_key, 1, 0, 3)
+			end
+		end
+		
 		if icon and icon.sprites and #icon.sprites > 0 then
 			sprite = ((self.hold and icon.sprites[3]) and icon.sprites[3]) or ((self.hover and icon.sprites[2]) and icon.sprites[2]) or icon.sprites[1]
 			sprite_offset = icon.offset or {x=0,y=0}
-
-			icon.key = icon.key or -1
-			icon.measure = icon.measure or 1
-			icon.flip = icon.flip or 0
-			icon.rotate = icon.rotate or 0
-			icon.extent = icon.extent or {x=1,y=1}
 			icon.align = icon.align or {x=0,y=0}
-			for x=1,icon.extent.x do
-				for y=1,icon.extent.y do
-					spr(sprite+(x-1)+((y-1)*16),
-						(tempX+(icon.align.x==1 and self.w*.5-((x*icon.measure*8)/2) or (icon.align.x==2 and self.w-(x*icon.measure*8) or 0))+sprite_offset.x),
-						(tempY+(icon.align.y==1 and self.h*.5-((y*icon.measure*8)/2) or (icon.align.y==2 and self.h-(y*icon.measure*8) or 0))+sprite_offset.y),
-						icon.key,
-						icon.measure,
-						icon.flip,
-						icon.rotate)
-			 	end
-			end
 
+			spr(sprite,
+				(tempX+(icon.align.x==1 and self.w*.5-((icon.scale*8)/2) or (icon.align.x==2 and self.w-(icon.scale*8) or 0))+sprite_offset.x),
+				(tempY+(icon.align.y==1 and self.h*.5-((icon.scale*8)/2) or (icon.align.y==2 and self.h-(icon.scale*8) or 0))+sprite_offset.y),
+				icon.key, icon.scale,icon.flip, icon.rotate, icon.w, icon.h)
 		end
 
 		--draw text
-		if text and text.print and text.colors[1] then
-			text.colors[1] = text.colors[1] or 14
-			text.gap = text.gap or 5
-			text.key = text.key or -1
-			text.height = text.height or (text.font and 8 or 6)
-			text.fixed = text.fixed or false
-
-
+		--set color for text
+		if text and text.print then
+			text_colors = text.colors or {15,15,15}
+			text_colors[1] = text_colors[1] or 15
+			
 			-- set color for text
-			if (self.hold and text.colors[3]) then
-				text_color = text.colors[3]
-			elseif (self.hover and text.colors[2]) then
-				text_color = text.colors[2]
-			else
-				text_color = text.colors[1]
-			end
+			text_color = checkColors(self.hold,self.hover,text_colors[3],text_colors[2],text_colors[1])	
+			
 			-- set color for text shadow
 			if text.shadow then
-				if (self.hold and text.shadow.colors[3]) then
-					text_shadow_color = text.colors[3]
-				elseif (self.hover and text.shadow.colors[2]) then
-					text_shadow_color = text.shadow.colors[2]
-				else
-					text_shadow_color = text.shadow.colors[1]
-				end
-				text_shadow_offset = text.shadow.offset or {x=1, y=1}
+				text_shadow = text.shadow
+				text_shadow_color = checkColors(self.hold, self.hover,text_shadow.colors[3],text_shadow.colors[2],text_shadow.colors[1])
+				text_shadow_offset = text_shadow.offset or {x=1, y=1}
 			end
-			-- initiate required vars
+			
+			-- get text size
 			text_offset = text.offset or {x = 0, y = 0}
 			if  text.font then
-				text_width, text_height = ticuare.font(text.print,0,200, -1, text.height, text.key, text.gap)
+				text.space = text.space or {w=8,h=8}
+				text_width, text_height = ticuare.font(text.print,0,200, -1, text.key, text.space.w, text.space.h, text.fixed, text.scale)
 			else 
-				text_width, text_height = ticuare.print(text.print,0,200, -1, text.height, text.fixed)
+				text_width, text_height = ticuare.print(text.print,0,200, -1, text.fixed, text.scale)
 			end
-			text.align = text.align or {x=0,y=0}
-
-			if text.align.x == 1 then
-				text_x = tempX+((self.w*.5)-(text_width*.5))+text_offset.x
-			elseif text.align.x == 2 then
-				text_x = tempX+((self.w)-(text_width))+text_offset.x-border_width
-			else
-				text_x = tempX+text_offset.x+border_width
-			end
-
-			if text.align.y == 1 then
-				text_y = tempY+((self.h*.5)-(text_height*.5))+text_offset.y
-			elseif text.align.y == 2 then
-				text_y = tempY+((self.h)-(text_height))+text_offset.y-border_width
-			else
-				text_y = tempY+text_offset.y+border_width
-			end
+			
+			
+			-- align text in x axis
+			text_align = text.align or {x=0,y=0}
+			text_x = (text_align.x==1 and tempX+((self.w*.5)-(text_width*.5))+text_offset.x or (text_align.x==2 and tempX+((self.w)-(text_width))+text_offset.x-border_width or tempX+text_offset.x+border_width))
+			text_y = (text_align.y==1 and tempY+((self.h*.5)-(text_height*.5))+text_offset.y or (text_align.y==2 and tempY+((self.h)-(text_height))+text_offset.y-border_width or tempY+text_offset.y+border_width))
 
 			-- drawing text and text shadow
 			if text.font then
-				if text.shadow and text_shadow_color then
-					ticuare.font(text.print, text_x+text_shadow_offset.x, text_y+text_shadow_offset.y, text_shadow_color, text.height, text.key, text.gap)
-					ticuare.font(text.print, text_x, text_y, text_color, text.height, text.key, text.gap)
-				else
-					ticuare.font(text.print, text_x, text_y, text_color, text.height, text.key, text.gap)
+				if type(text_shadow_color)=="table" then
+					
+					ticuare.font(text.print, text_x+text_shadow_offset.x, text_y+text_shadow_offset.y, text_shadow_color, text.key, text.space.w, text.space.h, text.fixed, text.scale)
 				end
+				ticuare.font(text.print, text_x, text_y, text_color, text.key, text.space.w, text.space.h, text.fixed, text.scale)
 			else
-				if text.shadow and text_shadow_color then
-					ticuare.print(text.print, text_x+text_shadow_offset.x, text_y+text_shadow_offset.y, text_shadow_color, text.height, text.fixed)
-					ticuare.print(text.print, text_x, text_y, text_color, text.height, text.fixed)
-				else
-					ticuare.print(text.print, text_x, text_y, text_color, text.height, text.fixed)
+				if text_shadow_color then
+					ticuare.print(text.print, text_x+text_shadow_offset.x, text_y+text_shadow_offset.y, text_shadow_color, text.fixed, text.scale)
 				end
+				ticuare.print(text.print, text_x, text_y, text_color, text.fixed, text.scale)
 			end
-		end
-		-- drawing element content
-		if self.content and self.drawContent then
-			if self.content.wrap and clip then clip(tempX+border_width, tempY+border_width, self.w-(2*border_width), self.h-(2*border_width)) end
-			self:renderContent()
-			if self.content.wrap and clip then clip() end
 		end
 	end
 end
+
+
 
 --
 -- Content
 --
 
 function ticuare:renderContent()
-	local tx, ty, border, offsetX, offsetY
-	tx = self.x-(self.align.x==1 and self.w*.5 or (self.align.x==2 and self.w or 0))
-	ty = self.y-(self.align.y==1 and self.h*.5-1 or (self.align.y==2 and self.h-1 or 0))
-	border = self.border and self.border.width and self.border.width or 1
+	local tx, ty, border, offsetX, offsetY, align
+	align = self.align
+	tx = self.x-(align.x==1 and self.w*.5 or (align.x==2 and self.w or 0))
+	ty = self.y-(align.y==1 and self.h*.5-1 or (align.y==2 and self.h-1 or 0))
+	border = self.border and self.border.width or 1
 	offsetX = tx-(self.content.scroll.x or 0)*(self.content.w-self.w) + border
 	offsetY = ty-(self.content.scroll.y or 0)*(self.content.h-self.h) + border
-	
 	self.drawContent(self,offsetX,offsetY)
 end
 
