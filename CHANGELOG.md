@@ -1,9 +1,61 @@
+- v0.8.0  
+  - updated to last changes in **TIC-80 v0.23.0**
+  - added possibility to make an **element's borders from sprites** = .border.sprites, .border.key
+  - added possibility to make an **element's backgrounds from sprites** = .tiled with attributes sprites, key, scale, rotate, flip, w, h (width, height for multi sprite)
+  - renamed .icon.measure > .icon.scale
+  - replaced .icon.extent for .icon.w and .icon.h
+  - replaced .text.gap, .text.height by .text.space.x, .text.space.y (has effect if .text.font is true )
+  - added attribute .text.scale
+  - when color or sprite defined in table of colors or sprites is set to nil, then it is transparent in given state 
+  - events functions have a reference to the element as first argument
+- v0.7.0
+  - added possibility to **change colors of font**
+  - the attribute text.key became table - array of colors which should be switched
+  - table of attribute element.text.colors can contain tables - arrays of colors to which will be colors switched
+  - added support for **gamepad control** - update(active_element, btn(number) alternative to mouse())
+  - added functionality for some methods to work with groups
+    - mygroup:active() return table of pairs of elements name and activity state
+    - mygroup:visible() return table of pairs of elements name and visibility state
+    - mygroup:anchor(element) - anchor all elements of group to element
+  - added new argument to function element:group(groupvar, [name_of_element_in_group])
+  - **removed** functions:
+    - view, hide, disable, enable, setContentDimensions (replaceable for element.content.w and h)
+  - **merged** functions (call a func with arguments = set, call a func without arguments = get):
+    - setDragBounds, getDragBounds to dragBounds
+    - setHorizontalRange, getHorizontalRange to horizontalRange
+    - setVerticalRange and getVerticalRange to verticalRange
+    - setScroll, getScroll to scroll
+    - setIndex, getIndex to index
+  - **renamed** functions:
+    - newStyle to Style
+    - newGroup to Group
+    - newElement to Element
+    - setContent > Content
+  - **replaced** function:  
+    - ticuare.mlprint for ticuare.font and ticuare.print
+- v0.6.0
+  - removed attribute *center*
+  - added attribure **align** as replace for *center*
+  - icon.*size* renamed to icon.**extent** and added option to define size of sprite (number of tiles) in both axis
+  - fixed bug in icon positioning
+  - added **micro version** using 2-3 letters names
+  - renamed some attributes for the purpose of to make them unique in the 2-3 letter shortcut form (micro version).
+  - renamings:
+    - icon.*size* > icon.**extent**
+    - icon.*scale* > icon.**measure**
+    - drag.*enabled* > drag.**active**
+    - text.*space* > text.**gap**
+    - text.*display* > text.**print**
+    - text.*spacing* > text.**height**
+    - *:onHold* > **:onPress**
+    - *:show* > **:view**
+    - *clear* > **empty**
 - v0.5.0
-	- Made revision of full code - made it more readable
-	- Added new attribute **shadow** for *element* and *element.text*
-	- Added functionality of wrapping element's content (available at next TIC-80 release v0.22.0)
-	- Changed the way how are a **bounds** are defined: from {{x,y},{x,y}} to **{x={min,max},y={min,max}}**
-	- Added attribute **relative** to *element.bounds* which defines whether bounds should be positioned relative to anchored element or not
+  - Made revision of full code - made it more readable
+  - Added new attribute **shadow** for *element* and *element.text*
+  - Added functionality of wrapping element's content (available at next TIC-80 release v0.22.0)
+  - Changed the way how are a **bounds** are defined: from {{x,y},{x,y}} to **{x={min,max},y={min,max}}**
+  - Added attribute **relative** to *element.bounds* which defines whether bounds should be positioned relative to anchored element or not
 - v0.4.0
   - added function *ticuare.***mlPrint***("line1\nline2",x,y,color,[line_spacing],fixed,font_func?,colorkey,space_width)* - multiline print/font function 
   - set *mlPrint* function as default for printing text in elements text
