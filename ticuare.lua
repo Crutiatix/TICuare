@@ -79,8 +79,9 @@ function ticuare.print(text,x,y,color,fixed,scale) -- string; x,y position; colo
 	fixed = fixed or false
 	scale = scale or 1
 	local _, lines_count = text:gsub("\n","")
+	local width, height = 0, 0
 	if color then
-		local width, height = print(text,x,y,color,fixed,scale), (6+lines_count) *scale *(lines_count+1)
+		width, height = print(text,x,y,color,fixed,scale), (6+lines_count) *scale *(lines_count+1)
 	end
 	return width, height
 end
@@ -384,8 +385,13 @@ function ticuare:drawSelf ()
 		if text and text.print then
 			text_colors = text.colors or {15,15,15}
 			text_colors[1] = text_colors[1] or 15
+			if not text.font and type(text.colors[1]) == "table" then
+				trace("If text.font is true, then text.colors has to be array of numbers!", 6)
+				trace("Traceback: Element with text:\""..text.print.."\"")
+				exit()
+			end
 			
-			-- set color for text
+			-- set color for text acording to mouse state
 			text_color = checkColors(self.hold,self.hover,text_colors[3],text_colors[2],text_colors[1])	
 			
 			-- set color for text shadow
